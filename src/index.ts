@@ -11,3 +11,5 @@ const plugin = {
 };
 
 export default plugin;
+export { parseShell, ShellSyntaxError } from "./parser/parse.js";
+export type * from "./types.js";
