@@ -669,6 +669,17 @@ describe("parseShell", () => {
 				operator: "-n",
 			});
 		});
+
+		it("should skip comments between test operands", () => {
+			for (const text of [
+				"[[ -n $x # before\n && -f $y ]]\n",
+				"[[ -n $x && # after\n -f $y ]]\n",
+			]) {
+				const node = first<TestCommandNode>(text);
+
+				expect((node.expression as BinaryTestNode).operator).toBe("&&");
+			}
+		});
 	});
 
 	describe("other commands", () => {
@@ -788,6 +799,22 @@ describe("parseShell", () => {
 			}
 		});
 
+		it("should report the path option on the error", () => {
+			try {
+				parseShell("if then fi\n", { path: "script.sh" });
+				expect.unreachable();
+			} catch (error) {
+				expect((error as ShellSyntaxError).path).toBe("script.sh");
+			}
+
+			try {
+				parseShell("if then fi\n");
+				expect.unreachable();
+			} catch (error) {
+				expect((error as ShellSyntaxError).path).toBeUndefined();
+			}
+		});
+
 		it("should throw on unknown variants", () => {
 			expect(() =>
 				parseShell("echo hi\n", {
@@ -803,6 +830,19 @@ describe("parseShell", () => {
 			const { ast } = parseShell("echo hi\n", { variant: "mksh" });
 
 			expect(ast.body).toHaveLength(1);
+		});
+
+		it("should report the mksh `;|` case terminator", () => {
+			const { ast } = parseShell(
+				"case $x in a) echo a ;| b) echo b ;; esac\n",
+				{ variant: "mksh" },
+			);
+			const statement = ast.body[0];
+
+			expect(
+				statement?.type === "CaseStatement" &&
+					statement.cases.map(clause => clause.terminator),
+			).toEqual([";|", ";;"]);
 		});
 
 		it("should reject bash-only syntax in posix mode", () => {

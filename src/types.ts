@@ -134,7 +134,7 @@ export interface CaseClauseNode extends ShellNodeBase {
 	patterns: WordNode[];
 	body: StatementNode[];
 
-	/** `;;`, `;&`, `;;&`, or `null` when omitted before `esac`. */
+	/** `;;`, `;&`, `;;&`, `;|` (mksh), or `null` when omitted before `esac`. */
 	terminator: string | null;
 }
 
